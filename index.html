@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f7f6">
+<title>Build a Surface</title>
+<style>
+:root{color-scheme:light;--ink:#173332;--muted:#536c69;--accent:#9c3b13;--border:#d9e4e0;--teal:#176e68}
+*{box-sizing:border-box}body{margin:0;background:#f5f7f6;color:var(--ink);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1260px;margin:auto;padding:28px 24px}header{display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:22px}.eyebrow{font-size:11px;letter-spacing:2px;font-weight:750;text-transform:uppercase;color:var(--teal)}h1{font-size:clamp(28px,4vw,40px);letter-spacing:-1.4px;margin:4px 0}header p{margin:0;color:var(--muted)}.equation{font-size:clamp(17px,2vw,23px);white-space:nowrap;background:white;border:1px solid var(--border);border-radius:14px;padding:16px 20px;font-family:Georgia,serif}
+.widget{background:#fff;border:1px solid var(--border);border-radius:22px;overflow:hidden;box-shadow:0 12px 40px #163c3210}.controls{padding:20px 24px;background:#edf4f1;display:grid;grid-template-columns:180px 1fr 100px;gap:24px;align-items:center}.control-title{font-size:13px;color:var(--muted)}.plane-value{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.8px;color:var(--accent)}.slider-row{display:flex;align-items:center;gap:12px}button{font:inherit;color:var(--ink);background:white;border:1px solid #b9ccc5;border-radius:10px;min-height:44px;padding:8px 14px;cursor:pointer}button:hover{background:#e0eeea}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,canvas:focus-visible{outline:3px solid var(--teal);outline-offset:3px}.step{font-size:24px;min-width:46px;line-height:1}input[type=range]{width:100%;min-height:44px;accent-color:var(--accent);cursor:pointer;margin:0}.range-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin:0 58px}.reset{font-size:13px}.plots{display:grid;grid-template-columns:1.15fr 1fr}.panel{min-width:0;padding:20px}.panel+.panel{border-left:1px solid var(--border)}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}h2{font-size:17px;margin:0}.tag{font-size:11px;color:var(--muted);background:#f0f5f3;border-radius:20px;padding:4px 9px}.plot-frame{position:relative;margin-top:10px;background:#fafcfb;border:1px solid #e2ebe7;border-radius:15px;overflow:hidden}.surface-frame{height:400px}.contour-frame{height:400px}canvas{display:block;width:100%;height:100%}#surface{touch-action:none;cursor:grab}#surface:active{cursor:grabbing}#contour{touch-action:manipulation;cursor:crosshair}.view-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.view-tools button{font-size:12px;flex:1;padding:6px 8px}.caption{font-size:12px;color:var(--muted);margin:10px 0 0}.legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px}.legend span{display:flex;align-items:center;gap:6px}.line{width:25px;border-top:2px solid #688d87}.line.selected{border-top:4px solid var(--accent)}.gradient{display:inline-block;width:65px;height:9px;background:linear-gradient(90deg,#244c76,#228d87,#e6d080);border-radius:3px}.probe{font-variant-numeric:tabular-nums;font-size:13px;min-height:24px;margin:8px 0 0;color:var(--teal)}.explore{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:20px 24px;border-top:1px solid var(--border);background:#fbfcfa}.explore h2{font-size:14px;color:var(--teal)}.explore p{font-size:14px;margin:0}.foot{font-size:12px;color:var(--muted);margin:14px 2px 0}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:900px){header{align-items:flex-start;flex-direction:column;gap:14px}.equation{padding:10px 16px}.surface-frame,.contour-frame{height:340px}.panel{padding:14px}.controls{gap:12px;padding:16px;grid-template-columns:145px 1fr 80px}}
+@media(max-width:650px){main{padding:18px 12px}.plots{grid-template-columns:1fr}.panel+.panel{border-left:0;border-top:1px solid var(--border)}.controls{grid-template-columns:1fr auto;gap:8px}.slider-block{grid-column:1/-1;grid-row:2}.reset{grid-column:2;grid-row:1}.surface-frame{height:330px}.contour-frame{height:350px}.explore{grid-template-columns:1fr;gap:6px;padding:16px}.tag{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="eyebrow">An exploration in three dimensions</div><h1>Build a Surface</h1><p>Move a plane. Follow its contour. Discover the shape.</p></div><div class="equation" aria-label="f of x, y equals 3 x minus x cubed minus 2 y squared plus y to the fourth"><i>f</i>(<i>x</i>, <i>y</i>) = 3<i>x</i> − <i>x</i><sup>3</sup> − 2<i>y</i><sup>2</sup> + <i>y</i><sup>4</sup></div></header>
+<section class="widget" aria-label="Interactive surface and contour explorer">
+<div class="controls">
+<div><label class="control-title" for="height">Horizontal plane height</label><div class="plane-value">z = <output id="value" for="height">0.0</output></div></div>
+<div class="slider-block"><div class="slider-row"><button class="step" id="minus" aria-label="Lower plane by 0.5">−</button><input id="height" type="range" min="-5" max="5" step="0.5" value="0" aria-describedby="height-help"><button class="step" id="plus" aria-label="Raise plane by 0.5">+</button></div><div class="range-labels"><span>−5</span><span>0</span><span>5</span></div><span id="height-help" class="sr-only">Select c from minus 5 to 5 in steps of 0.5. Both plots update together.</span></div>
+<button class="reset" id="reset">Reset all</button>
+</div>
+<div class="plots">
+<section class="panel"><div class="panel-heading"><h2>The surface</h2><span class="tag">z = f(x, y)</span></div><div class="plot-frame surface-frame"><canvas id="surface" tabindex="0" role="img" aria-label="Rotatable three dimensional surface with a translucent horizontal plane and bold intersection contour. Drag or use arrow keys to rotate.">Three dimensional surface for f(x,y) = 3x − x³ − 2y² + y⁴.</canvas></div><div class="view-tools"><button id="left" aria-label="Rotate surface left">↶ Rotate</button><button id="right" aria-label="Rotate surface right">Rotate ↷</button><button id="tilt">Change tilt</button><button id="view">Reset view</button></div><p class="caption">Drag to rotate · Arrow keys also rotate · Vertical scale compressed</p><div class="legend"><span><i class="gradient" aria-hidden="true"></i>Low → high</span><span><i class="line selected" aria-hidden="true"></i>Intersection with z = c</span></div></section>
+<section class="panel"><div class="panel-heading"><h2>The contour map</h2><span class="tag">Looking down the z-axis</span></div><div class="plot-frame contour-frame"><canvas id="contour" role="img" aria-label="Contour map with levels from minus 5 to 5 every 0.5. The selected level is bold. Tap to inspect a coordinate.">Each contour joins points where f(x,y) has the same height.</canvas></div><div class="legend"><span><i class="line" aria-hidden="true"></i>Levels −5 to 5, every 0.5</span><span><i class="line selected" aria-hidden="true"></i><span id="contour-level">c = 0.0</span></span></div><p class="probe" id="probe" aria-live="polite">Tap the map to inspect a point.</p><p class="caption">A contour joins points with the same height: f(x, y) = c.</p></section>
+</div>
+<div class="explore"><h2>Notice & wonder</h2><p>As you move the plane, where do contours split, join, or shrink? Rotate the surface and compare those places with the map. Which might be a local maximum, a local minimum, or a saddle point?</p></div>
+</section>
+<p class="foot">Shared window: −2.2 ≤ x ≤ 2.2, −1.8 ≤ y ≤ 1.8. Curves are numerical approximations; tiny loops or exact touching points may be hard to see. The plane is translucent so the surface stays visible.</p>
+<p class="sr-only" id="status" aria-live="polite"></p>
+<details class="foot"><summary>Explore without the plots</summary><p>Use the plane slider with arrow keys, or the plus and minus buttons. A contour is the set of coordinates satisfying 3x − x³ − 2y² + y⁴ = c. To reason about the surface, compare the height at nearby coordinates in different directions: does it increase, decrease, or do both? The map inspection below gives a numerical height.</p><div><label for="px">x</label> <input id="px" type="number" min="-2.2" max="2.2" step="0.1" value="0"> <label for="py">y</label> <input id="py" type="number" min="-1.8" max="1.8" step="0.1" value="0"> <button id="inspect">Inspect point</button></div></details>
+</main>
+<script>
+/* Self-contained canvas renderer. Orthographic projection; no WebGL or network requests.
+   Mesh and level curves share the same function and domain. */
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const surface = $('surface'), contour = $('contour'), sc = surface.getContext('2d'), cc = contour.getContext('2d');
+const bounds = {xmin:-2.2,xmax:2.2,ymin:-1.8,ymax:1.8};
+const f = (x,y) => 3*x-x*x*x-2*y*y+y*y*y*y;
+let c = 0, yaw = -.65, pitch = .61, scheduled = false, probe = null;
+let sw=0,sh=0,cw=0,ch=0,map=null;
+let camera={scale:1,x:0,y:0};
+const levels = Array.from({length:21},(_,i)=>-5+i*.5);
+const mesh=[], curveCache=new Map();
+function point(x,y){return [x,y,f(x,y)];}
+// Uniform triangulation makes the intersection unambiguous in saddle cells.
+function makeMesh(n){const tris=[];for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+ const x=bounds.xmin+i*(bounds.xmax-bounds.xmin)/n,y=bounds.ymin+j*(bounds.ymax-bounds.ymin)/n;
+ const dx=(bounds.xmax-bounds.xmin)/n,dy=(bounds.ymax-bounds.ymin)/n;
+ const a=point(x,y),b=point(x+dx,y),d=point(x,y+dy),e=point(x+dx,y+dy);
+ tris.push([a,b,e],[a,e,d]);}return tris;}
+mesh.push(...makeMesh(56));
+const fineMesh=makeMesh(150);
+function intersections(tri,level){const hits=[];for(let i=0;i<3;i++){
+ const a=tri[i],b=tri[(i+1)%3];
+ if((a[2]<=level&&b[2]>level)||(b[2]<=level&&a[2]>level)){
+ const t=(level-a[2])/(b[2]-a[2]);hits.push([a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1]),level]);}}
+ return hits.length===2?hits:null;}
+for(const level of levels){const segs=[];for(const tri of fineMesh){const seg=intersections(tri,level);if(seg)segs.push(seg);}curveCache.set(level,segs);}
+function project(p){const x=p[0]*Math.cos(yaw)-p[1]*Math.sin(yaw),y=p[0]*Math.sin(yaw)+p[1]*Math.cos(yaw),z=(p[2]-1)*.34;
+ return [camera.x+x*camera.scale,camera.y+(y*Math.sin(pitch)-z*Math.cos(pitch))*camera.scale,y*Math.cos(pitch)+z*Math.sin(pitch)];}
+function fitCamera(){camera={scale:1,x:0,y:0};const corners=[];for(const x of [-2.2,2.2])for(const y of [-1.8,1.8])for(const z of [-6,8])corners.push(project([x,y,z]));const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]),xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);const scale=Math.min((sw-52)/(xmax-xmin),(sh-60)/(ymax-ymin));camera={scale,x:sw/2-(xmin+xmax)/2*scale,y:(sh-12)/2-(ymin+ymax)/2*scale};}
+function color(z){const t=Math.max(0,Math.min(1,(z+5.1)/13)),a=t<.55?[36,76,118]:[34,141,135],b=t<.55?[34,141,135]:[230,208,128],u=t<.55?t/.55:(t-.55)/.45;return `rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*u)).join(',')})`;}
+function path(ctx,pts,close){ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));if(close)ctx.closePath();}
+function line3(a,b,color,width=1){path(sc,[project(a),project(b)],false);sc.strokeStyle=color;sc.lineWidth=width;sc.stroke();}
+// Split surface faces at the plane so near/far sorting does not paint an entire crossing face on one side.
+function clip(poly,above){const out=[];for(let i=0;i<poly.length;i++){
+ const a=poly[i],b=poly[(i+1)%poly.length],inside=above?a[2]>=c:a[2]<=c,next=above?b[2]>=c:b[2]<=c;
+ if(inside)out.push(a);if(inside!==next){const t=(c-a[2])/(b[2]-a[2]);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,c]);}}
+ return out;}
+function drawSurface(){
+ fitCamera();
+ sc.clearRect(0,0,sw,sh);
+ for(let x=-2;x<=2;x++)line3([x,-1.8,-6],[x,1.8,-6],'#dae6e1');
+ for(let y=-1;y<=1;y++)line3([-2.2,y,-6],[2.2,y,-6],'#dae6e1');
+ const items=[];
+ const add=(poly,fill,stroke,width=0)=>{const pts=poly.map(project);items.push({pts,fill,stroke,width,depth:pts.reduce((s,p)=>s+p[2],0)/pts.length});};
+ for(const tri of mesh){const fill=color(tri.reduce((s,p)=>s+p[2],0)/3);
+ if(Math.min(...tri.map(p=>p[2]))<c&&Math.max(...tri.map(p=>p[2]))>c){for(const above of [false,true]){const p=clip(tri,above);if(p.length>2)add(p,fill,fill,.55);}}
+ else add(tri,fill,fill,.55);}
+ const n=24,dx=4.4/n,dy=3.6/n;
+ for(let i=0;i<n;i++)for(let j=0;j<n;j++){const x=-2.2+i*dx,y=-1.8+j*dy;add([[x,y,c],[x+dx,y,c],[x+dx,y+dy,c],[x,y+dy,c]],'rgba(210,123,65,.19)',null);}
+ for(let x=-2;x<=2;x++)add([[x,-1.8,c],[x,1.8,c]],null,'#a85b323b',.6);
+ for(let y=-1;y<=1;y++)add([[-2.2,y,c],[2.2,y,c]],null,'#a85b323b',.6);
+ for(const seg of curveCache.get(c))add(seg,null,'#9c3b13',2.5);
+ // At these exact levels an isolated component of a level set is a single point.
+ const isolated=[[1,0,2],[-1,-1,-3],[-1,1,-3]].filter(p=>p[2]===c);
+ for(const p of isolated){const q=project(p);items.push({pts:[q],dot:true,depth:q[2]+.001});}
+ items.sort((a,b)=>a.depth-b.depth);
+ for(const item of items){if(item.dot){sc.beginPath();sc.arc(item.pts[0][0],item.pts[0][1],3,0,Math.PI*2);sc.fillStyle='#9c3b13';sc.fill();continue;}path(sc,item.pts,!!item.fill);if(item.fill){sc.fillStyle=item.fill;sc.fill();}if(item.stroke){sc.strokeStyle=item.stroke;sc.lineWidth=item.width;sc.stroke();}}
+ // Outline and labels distinguish the horizontal slicing plane from the surface.
+ const corners=[[-2.2,-1.8,c],[2.2,-1.8,c],[2.2,1.8,c],[-2.2,1.8,c]];
+ path(sc,corners.map(project),true);sc.strokeStyle='#9c3b13';sc.lineWidth=1.3;sc.setLineDash([5,4]);sc.stroke();sc.setLineDash([]);
+ const label=project(corners[2]);sc.font='600 12px system-ui';sc.fillStyle='#84340f';sc.fillText(`z = ${c.toFixed(1)}`,Math.max(8,Math.min(sw-65,label[0]+5)),Math.max(20,Math.min(sh-12,label[1]-8)));
+ // Coordinate frame on the floor; arrow tips show positive coordinate directions.
+ const axes=[[[-2.2,-1.8,-6],[2.2,-1.8,-6],'x'],[[-2.2,-1.8,-6],[-2.2,1.8,-6],'y'],[[-2.2,-1.8,-6],[-2.2,-1.8,8],'z']];
+ for(const [a,b,name] of axes){const pa=project(a),pb=project(b);path(sc,[pa,pb],false);sc.strokeStyle='#3b5753';sc.lineWidth=1.1;sc.stroke();const angle=Math.atan2(pb[1]-pa[1],pb[0]-pa[0]);path(sc,[[pb[0]-7*Math.cos(angle-.4),pb[1]-7*Math.sin(angle-.4)],pb,[pb[0]-7*Math.cos(angle+.4),pb[1]-7*Math.sin(angle+.4)]],false);sc.stroke();sc.fillStyle='#304d48';sc.font='600 13px system-ui';sc.fillText(name,pb[0]+6,pb[1]+4);}
+ sc.fillStyle='#536c69';sc.font='11px system-ui';sc.fillText('x, y in the same window as the map',12,sh-12);
+}
+function mapPoint(p){return [map.x+(p[0]+2.2)*map.scale,map.y+(1.8-p[1])*map.scale];}
+function drawMap(){cc.clearRect(0,0,cw,ch);const scale=Math.min((cw-74)/4.4,(ch-58)/3.6);map={scale,x:(cw-4.4*scale)/2,y:(ch-3.6*scale)/2-4,w:4.4*scale,h:3.6*scale};
+ cc.fillStyle='#f5f9f7';cc.fillRect(map.x,map.y,map.w,map.h);
+ for(let x=-2;x<=2;x++){path(cc,[mapPoint([x,-1.8]),mapPoint([x,1.8])],false);cc.strokeStyle=x===0?'#91aaa3':'#dbe6e1';cc.lineWidth=x===0?1.2:1;cc.stroke();}
+ for(let y=-1;y<=1;y++){path(cc,[mapPoint([-2.2,y]),mapPoint([2.2,y])],false);cc.strokeStyle=y===0?'#91aaa3':'#dbe6e1';cc.lineWidth=y===0?1.2:1;cc.stroke();}
+ for(const level of levels){if(level===c)continue;cc.beginPath();for(const seg of curveCache.get(level)){const a=mapPoint(seg[0]),b=mapPoint(seg[1]);cc.moveTo(...a);cc.lineTo(...b);}cc.strokeStyle=level===0?'#426f69':'#729b938c';cc.lineWidth=level===0?1.4:1;cc.stroke();}
+ cc.beginPath();for(const seg of curveCache.get(c)){const a=mapPoint(seg[0]),b=mapPoint(seg[1]);cc.moveTo(...a);cc.lineTo(...b);}cc.strokeStyle='#9c3b13';cc.lineWidth=3;cc.stroke();
+ for(const p of [[1,0,2],[-1,-1,-3],[-1,1,-3]])if(p[2]===c){const q=mapPoint(p);cc.beginPath();cc.arc(q[0],q[1],3.5,0,Math.PI*2);cc.fillStyle='#9c3b13';cc.fill();}
+ cc.strokeStyle='#aec4ba';cc.lineWidth=1;cc.strokeRect(map.x,map.y,map.w,map.h);cc.fillStyle='#536c69';cc.font='12px system-ui';cc.textAlign='center';
+ for(let x=-2;x<=2;x++){const p=mapPoint([x,-1.8]);cc.fillText(String(x),p[0],p[1]+19);}cc.textAlign='right';for(let y=-1;y<=1;y++){const p=mapPoint([-2.2,y]);cc.fillText(String(y),p[0]-9,p[1]+4);}cc.textAlign='center';cc.font='italic 600 14px system-ui';cc.fillText('x',map.x+map.w+15,map.y+map.h+19);cc.fillText('y',map.x-15,map.y-10);
+ if(probe){const p=mapPoint(probe);cc.beginPath();cc.arc(...p,5,0,Math.PI*2);cc.fillStyle='white';cc.fill();cc.strokeStyle='#173332';cc.lineWidth=2;cc.stroke();}
+ cc.textAlign='left';
+}
+function requestDraw(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;drawSurface();drawMap();});}
+function resize(){for(const [canvas,ctx,isSurface] of [[surface,sc,true],[contour,cc,false]]){const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);if(isSurface){sw=rect.width;sh=rect.height;}else{cw=rect.width;ch=rect.height;}}requestDraw();}
+function update(){c=Number($('height').value);$('value').textContent=c.toFixed(1);$('contour-level').textContent=`c = ${c.toFixed(1)}`;$('height').setAttribute('aria-valuetext',`c equals ${c.toFixed(1)}`);$('minus').disabled=c<=-5;$('plus').disabled=c>=5;$('status').textContent=`Plane and highlighted contour at height ${c.toFixed(1)}.`;requestDraw();}
+$('height').addEventListener('input',update);
+for(const [id,delta] of [['minus',-.5],['plus',.5]])$(id).addEventListener('click',()=>{$('height').value=Math.max(-5,Math.min(5,c+delta));update();});
+function resetView(){yaw=-.65;pitch=.61;requestDraw();}
+$('reset').addEventListener('click',()=>{$('height').value=0;probe=null;$('px').value=0;$('py').value=0;$('probe').textContent='Tap the map to inspect a point.';resetView();update();});
+$('view').addEventListener('click',resetView);$('left').addEventListener('click',()=>{yaw-=.2;requestDraw();});$('right').addEventListener('click',()=>{yaw+=.2;requestDraw();});$('tilt').addEventListener('click',()=>{pitch=pitch>.85?.35:pitch+.2;requestDraw();});
+let drag=null;
+surface.addEventListener('pointerdown',e=>{if(e.isPrimary&&e.button===0){drag={id:e.pointerId,x:e.clientX,y:e.clientY};surface.setPointerCapture(e.pointerId);surface.focus({preventScroll:true});}});
+surface.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;yaw+=(e.clientX-drag.x)*.008;pitch=Math.max(.18,Math.min(1.25,pitch+(e.clientY-drag.y)*.006));drag.x=e.clientX;drag.y=e.clientY;requestDraw();});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(event,()=>{drag=null;});
+surface.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home'].includes(e.key))return;e.preventDefault();if(e.key==='Home')resetView();else{yaw+=e.key==='ArrowLeft'?-.12:e.key==='ArrowRight'?.12:0;pitch=Math.max(.18,Math.min(1.25,pitch+(e.key==='ArrowUp'?.08:e.key==='ArrowDown'?-.08:0)));requestDraw();}});
+function inspect(x,y){probe=[x,y];$('probe').textContent=`x = ${x.toFixed(2)}, y = ${y.toFixed(2)} → f(x, y) = ${f(x,y).toFixed(3)}`;$('px').value=x.toFixed(2);$('py').value=y.toFixed(2);requestDraw();}
+contour.addEventListener('click',e=>{if(!map)return;const rect=contour.getBoundingClientRect(),x=(e.clientX-rect.left-map.x)/map.scale-2.2,y=1.8-(e.clientY-rect.top-map.y)/map.scale;if(x>=-2.2&&x<=2.2&&y>=-1.8&&y<=1.8)inspect(x,y);});
+$('inspect').addEventListener('click',()=>{const x=Number($('px').value),y=Number($('py').value);if($('px').value===''||$('py').value===''||!Number.isFinite(x)||!Number.isFinite(y)||x< -2.2||x>2.2||y< -1.8||y>1.8){$('probe').textContent='Enter x between −2.2 and 2.2 and y between −1.8 and 1.8.';return;}inspect(x,y);});
+new ResizeObserver(resize).observe(document.querySelector('.plots'));window.addEventListener('resize',resize);update();resize();
+})();
+</script>
+</body>
+</html>
